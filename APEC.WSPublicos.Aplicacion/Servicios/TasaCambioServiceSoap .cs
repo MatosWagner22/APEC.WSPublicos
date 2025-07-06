@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.ServiceModel;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace APEC.WS.Aplicacion.Servicios
@@ -22,21 +23,22 @@ namespace APEC.WS.Aplicacion.Servicios
         public decimal ObtenerTasa(string codigoMoneda)
         {
             if (string.IsNullOrWhiteSpace(codigoMoneda))
-            {
-                // Manejo de error compatible con SOAP
-                throw new FaultException("El código de moneda no puede estar vacío");
-            }
+                throw new FaultException("El codigo de moneda es obligatorio");
 
             codigoMoneda = codigoMoneda.Trim().ToUpper();
+
+            if (codigoMoneda.Length != 3)
+                throw new FaultException("El codigo de moneda debe tener exactamente 3 caracteres");
+
+            if (!Regex.IsMatch(codigoMoneda, @"^[A-Z]+$"))
+                throw new FaultException("El codigo de moneda solo puede contener letras mayusculas");
 
             var tasa = _context.TasasCambiarias
                 .AsNoTracking()
                 .FirstOrDefault(t => t.CodigoMoneda == codigoMoneda);
 
             if (tasa == null)
-            {
-                throw new FaultException($"No se encontró tasa para la moneda {codigoMoneda}");
-            }
+                throw new FaultException($"No se encontro tasa para la moneda {codigoMoneda}");
 
             return tasa.Monto;
         }

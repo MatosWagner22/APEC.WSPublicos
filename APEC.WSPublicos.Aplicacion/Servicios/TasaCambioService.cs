@@ -28,7 +28,7 @@ namespace APEC.WS.Aplicacion.Servicios
             codigoMoneda = codigoMoneda.Trim().ToUpper();
 
             var tasa = _context.TasasCambiarias
-                .AsNoTracking()  // Solo lectura (mejor rendimiento)
+                .AsNoTracking()
                 .FirstOrDefault(t => t.CodigoMoneda == codigoMoneda);
 
             if (tasa == null)
