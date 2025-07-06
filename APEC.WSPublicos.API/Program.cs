@@ -3,6 +3,7 @@ using APEC.WS.Aplicacion.Servicios;
 using APEC.WS.Infrastructura.Data;
 using APEC.WS.Infrastructura.Modelos;
 using Microsoft.EntityFrameworkCore;
+using SoapCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +20,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Registrar servicios de Application
 builder.Services.AddScoped<ITasaCambioService, TasaCambioService>();
 
+// Registrar servicios de Application UDDI
+builder.Services.AddScoped<ITasaCambioServiceSoap, TasaCambioServiceSoap>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -32,15 +36,20 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
-app.MapControllers();
+// Middleware SOAP (con parámetros explícitos)
+((IApplicationBuilder)app).UseSoapEndpoint<ITasaCambioServiceSoap>(
+    path: "/TasaCambio.asmx",
+    encoder: new SoapEncoderOptions(),
+    serializer: SoapSerializer.XmlSerializer
+);
 
-app.Run();
-
+// Middleware de registro de uso
 app.Use(async (context, next) =>
 {
-    if (context.Request.Path.StartsWithSegments("/api"))
+    if (context.Request.Path.StartsWithSegments("/api") ||
+        context.Request.Path.StartsWithSegments("/TasaCambio.asmx"))
     {
-        var dbContext = context.RequestServices.GetService<AppDbContext>();
+        var dbContext = context.RequestServices.GetRequiredService<AppDbContext>();
         dbContext.RegistrosUso.Add(new RegistroUsoServicio
         {
             NombreServicio = context.Request.Path,
@@ -50,3 +59,7 @@ app.Use(async (context, next) =>
     }
     await next();
 });
+
+app.MapControllers();
+
+app.Run();

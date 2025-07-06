@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="System.ServiceModel.Primitives" Version="8.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\APEC.WSPublicos.Infrastructura\APEC.WSPublicos.Infrastructura.csproj" />
   </ItemGroup>
 
