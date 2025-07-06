@@ -27,6 +27,7 @@ builder.Services.AddScoped<ITasaCambioService, TasaCambioService>();
 // Registrar servicios de Application UDDI
 builder.Services.AddScoped<ITasaCambioServiceSoap, TasaCambioServiceSoap>();
 builder.Services.AddScoped<IInflacionServiceSoap, InflacionServiceSoap>();
+builder.Services.AddScoped<ISaludFinancieraServiceSoap, SaludFinancieraServiceSoap>();
 
 // Registrar transformador
 builder.Services.AddSingleton<IFaultExceptionTransformer, CustomFaultExceptionTransformer>();
@@ -47,13 +48,15 @@ app.UseAuthorization();
 // Configuración SOAP
 ((IApplicationBuilder)app).UseSoapEndpoint<ITasaCambioServiceSoap>("/TasaCambio.asmx", new SoapCore.SoapEncoderOptions(), SoapSerializer.XmlSerializer);
 ((IApplicationBuilder)app).UseSoapEndpoint<IInflacionServiceSoap>("/Inflacion.asmx", new SoapCore.SoapEncoderOptions(), SoapSerializer.XmlSerializer);
+((IApplicationBuilder)app).UseSoapEndpoint<ISaludFinancieraServiceSoap>("/SaludFinanciera.asmx", new SoapCore.SoapEncoderOptions(), SoapSerializer.XmlSerializer);
 
 // Middleware de registro de uso
 app.Use(async (context, next) =>
 {
     if (context.Request.Path.StartsWithSegments("/api") ||
         context.Request.Path.StartsWithSegments("/TasaCambio.asmx") ||
-        context.Request.Path.StartsWithSegments("/Inflacion.asmx"))
+        context.Request.Path.StartsWithSegments("/Inflacion.asmx") ||
+        context.Request.Path.StartsWithSegments("/SaludFinanciera.asmx"))
     {
         using (var scope = context.RequestServices.CreateScope())
         {
