@@ -15,8 +15,8 @@ Exponga un Servicio Web para:
 - Consultar la tasa de cambio segun la moneda indicada ✔
 - Consultar el índice de inflación del período ✔
 - Consultar la salud Financiera de un cliente ✔
-- Consultar el historial crediticio de un cliente 
-- Consulta de Uso de Web Services (Filtros: Nombre WS, Rango de fecha de invocación)
+- Consultar el historial crediticio de un cliente ✔
+- Consulta de Uso de Web Services (Filtros: Nombre WS, Rango de fecha de invocación) ✔
 
 #### Solucion
 
