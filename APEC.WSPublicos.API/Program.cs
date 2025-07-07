@@ -29,6 +29,7 @@ builder.Services.AddScoped<ITasaCambioServiceSoap, TasaCambioServiceSoap>();
 builder.Services.AddScoped<IInflacionServiceSoap, InflacionServiceSoap>();
 builder.Services.AddScoped<ISaludFinancieraServiceSoap, SaludFinancieraServiceSoap>();
 builder.Services.AddScoped<IHistorialCrediticioServiceSoap, HistorialCrediticioServiceSoap>();
+builder.Services.AddScoped<IReporteUsoServiceSoap, ReporteUsoServiceSoap>();
 
 // Registrar transformador
 builder.Services.AddSingleton<IFaultExceptionTransformer, CustomFaultExceptionTransformer>();
@@ -46,34 +47,49 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
+// Middleware de registro de uso
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path.Value ?? "";
+
+    if (path.StartsWith("/ReporteUso.asmx", StringComparison.OrdinalIgnoreCase))
+    {
+        await next();
+        return;
+    }
+
+    var serviciosRegistrables = new[]
+    {
+        "/api",
+        "/TasaCambio.asmx",
+        "/Inflacion.asmx",
+        "/SaludFinanciera.asmx",
+        "/HistorialCrediticio.asmx"
+    };
+
+    if (serviciosRegistrables.Any(s => path.StartsWith(s, StringComparison.OrdinalIgnoreCase)))
+    {
+        using var scope = context.RequestServices.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        dbContext.RegistrosUso.Add(new RegistroUsoServicio
+        {
+            NombreServicio = serviciosRegistrables.First(s => path.StartsWith(s, StringComparison.OrdinalIgnoreCase)),
+            FechaInvocacion = DateTime.UtcNow
+        });
+
+        await dbContext.SaveChangesAsync();
+    }
+
+    await next();
+});
+
 // Configuración SOAP
 ((IApplicationBuilder)app).UseSoapEndpoint<ITasaCambioServiceSoap>("/TasaCambio.asmx", new SoapCore.SoapEncoderOptions(), SoapSerializer.XmlSerializer);
 ((IApplicationBuilder)app).UseSoapEndpoint<IInflacionServiceSoap>("/Inflacion.asmx", new SoapCore.SoapEncoderOptions(), SoapSerializer.XmlSerializer);
 ((IApplicationBuilder)app).UseSoapEndpoint<ISaludFinancieraServiceSoap>("/SaludFinanciera.asmx", new SoapCore.SoapEncoderOptions(), SoapSerializer.XmlSerializer);
 ((IApplicationBuilder)app).UseSoapEndpoint<IHistorialCrediticioServiceSoap>("/HistorialCrediticio.asmx", new SoapCore.SoapEncoderOptions(), SoapSerializer.XmlSerializer);
-
-// Middleware de registro de uso
-app.Use(async (context, next) =>
-{
-    if (context.Request.Path.StartsWithSegments("/api") ||
-        context.Request.Path.StartsWithSegments("/TasaCambio.asmx") ||
-        context.Request.Path.StartsWithSegments("/Inflacion.asmx") ||
-        context.Request.Path.StartsWithSegments("/SaludFinanciera.asmx") ||
-        context.Request.Path.StartsWithSegments("/HistorialCrediticio.asmx"))
-    {
-        using (var scope = context.RequestServices.CreateScope())
-        {
-            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            dbContext.RegistrosUso.Add(new RegistroUsoServicio
-            {
-                NombreServicio = context.Request.Path,
-                FechaInvocacion = DateTime.UtcNow
-            });
-            await dbContext.SaveChangesAsync();
-        }
-    }
-    await next();
-});
+((IApplicationBuilder)app).UseSoapEndpoint<IReporteUsoServiceSoap>("/ReporteUso.asmx", new SoapCore.SoapEncoderOptions(), SoapSerializer.XmlSerializer);
 
 app.MapControllers();
 
