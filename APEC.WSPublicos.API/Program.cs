@@ -34,13 +34,12 @@ builder.Services.AddScoped<IReporteUsoServiceSoap, ReporteUsoServiceSoap>();
 // Registrar transformador
 builder.Services.AddSingleton<IFaultExceptionTransformer, CustomFaultExceptionTransformer>();
 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowVueFrontend", policy =>
-    {
-        policy.WithOrigins("http://localhost:5173")
+builder.Services.AddCors(options => {
+    options.AddPolicy("AllowAll", policy => {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .SetPreflightMaxAge(TimeSpan.FromHours(1));
     });
 });
 
@@ -55,6 +54,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseRouting();
+
+app.UseCors("AllowAll");
+
+app.UseAuthentication();
 app.UseAuthorization();
 
 // Middleware de registro de uso
@@ -100,8 +104,6 @@ app.Use(async (context, next) =>
 ((IApplicationBuilder)app).UseSoapEndpoint<ISaludFinancieraServiceSoap>("/SaludFinanciera.asmx", new SoapCore.SoapEncoderOptions(), SoapSerializer.XmlSerializer);
 ((IApplicationBuilder)app).UseSoapEndpoint<IHistorialCrediticioServiceSoap>("/HistorialCrediticio.asmx", new SoapCore.SoapEncoderOptions(), SoapSerializer.XmlSerializer);
 ((IApplicationBuilder)app).UseSoapEndpoint<IReporteUsoServiceSoap>("/ReporteUso.asmx", new SoapCore.SoapEncoderOptions(), SoapSerializer.XmlSerializer);
-
-app.UseCors("AllowVueFrontend");
 
 app.MapControllers();
 
