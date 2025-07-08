@@ -34,6 +34,16 @@ builder.Services.AddScoped<IReporteUsoServiceSoap, ReporteUsoServiceSoap>();
 // Registrar transformador
 builder.Services.AddSingleton<IFaultExceptionTransformer, CustomFaultExceptionTransformer>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowVueFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -90,6 +100,8 @@ app.Use(async (context, next) =>
 ((IApplicationBuilder)app).UseSoapEndpoint<ISaludFinancieraServiceSoap>("/SaludFinanciera.asmx", new SoapCore.SoapEncoderOptions(), SoapSerializer.XmlSerializer);
 ((IApplicationBuilder)app).UseSoapEndpoint<IHistorialCrediticioServiceSoap>("/HistorialCrediticio.asmx", new SoapCore.SoapEncoderOptions(), SoapSerializer.XmlSerializer);
 ((IApplicationBuilder)app).UseSoapEndpoint<IReporteUsoServiceSoap>("/ReporteUso.asmx", new SoapCore.SoapEncoderOptions(), SoapSerializer.XmlSerializer);
+
+app.UseCors("AllowVueFrontend");
 
 app.MapControllers();
 
